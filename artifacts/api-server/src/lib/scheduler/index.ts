@@ -2,7 +2,7 @@
  * lib/scheduler/index.ts
  * ─────────────────────────────────────────────────────────────────────────────
  * Mega Engine — Phase 8 blueprint, Parts B1 + B2: Scheduler core +
- * Recurring/Cron, and E1 (§39 jobs.*/worker.* metrics, feeding §61's
+ * Recurring/Cron, and E1 (§39 job and worker metrics, feeding §61's
  * Engine Health Model). Barrel export — domain modules should import
  * from "../scheduler" (this file), not reach into individual files here.
  */

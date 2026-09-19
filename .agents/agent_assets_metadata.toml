@@ -28,3 +28,17 @@ mtime_ms = 1789802232432
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:42aacae9-c23b-447e-bf9a-c44ccfd62403/5c1102d7-e309-4c35-a124-3433dd916672/d787ac55-ea26-473a-b514-c17e642529e8"
 storage_version_token = "1789802238988988"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "ZGch2KLEkKxGVWIuCu3ga"
+uri = "file://exports/ayzen-acie-source.zip"
+type = "unspecified"
+title = "AYZEN ACIE source code"
+description = "Clean source archive with node_modules, dist, cache, generated build output, VCS metadata, logs, coverage, and workspace metadata excluded."
+logical_id = "f6a34fe3-afd0-4d15-85cb-3f48ff7b7f1e"
+content_hash = "sha256:61859f935f4da32dc99e17414accc8835dd8c6e240de8e3b6981582d209f6332"
+size = 4713603
+mtime_ms = 1789841087864
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:19590d43-a928-4d00-aca3-3dec095c8883/f6a34fe3-afd0-4d15-85cb-3f48ff7b7f1e/a33a3830-8809-48bb-ae91-45310745ebc6"
+storage_version_token = "1789841099910704"
+content_type = "application/octet-stream"
