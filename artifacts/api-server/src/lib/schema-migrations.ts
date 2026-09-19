@@ -2625,4 +2625,126 @@ export const MIGRATIONS = [
   "CREATE INDEX IF NOT EXISTS idx_scheduled_job_dead_letter_retention ON scheduled_job_dead_letter(status, resolved_at, id)",
   "CREATE INDEX IF NOT EXISTS idx_scheduled_job_terminal_retention ON scheduled_job(status, updated_at, id)",
   "CREATE INDEX IF NOT EXISTS idx_workflow_run_terminal_retention ON workflow_run(status, updated_at, id)",
+  // Phase 1-10 modular architecture foundation:
+  // request/workspace context is explicit, Telegram is registry-driven, and
+  // service ownership is documented in durable metadata. No secret values are
+  // stored in these tables.
+  `CREATE TABLE IF NOT EXISTS workspaces (
+    id SERIAL PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'personal',
+    organization_id INTEGER,
+    owner_user_id INTEGER,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`,
+  "CREATE INDEX IF NOT EXISTS workspaces_organization_id_idx ON workspaces(organization_id)",
+  "CREATE INDEX IF NOT EXISTS workspaces_owner_user_id_idx ON workspaces(owner_user_id)",
+  `CREATE TABLE IF NOT EXISTS workspace_members (
+    id SERIAL PRIMARY KEY,
+    workspace_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    role TEXT NOT NULL DEFAULT 'member',
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(workspace_id, user_id)
+  )`,
+  "CREATE INDEX IF NOT EXISTS workspace_members_user_id_idx ON workspace_members(user_id)",
+  `CREATE TABLE IF NOT EXISTS telegram_bots (
+    id SERIAL PRIMARY KEY,
+    bot_key TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    responsibility TEXT NOT NULL,
+    token_env_var TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'disabled',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS telegram_update_receipts (
+    id SERIAL PRIMARY KEY,
+    bot_key TEXT NOT NULL,
+    update_id INTEGER NOT NULL,
+    received_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    processed_at TIMESTAMP,
+    status TEXT NOT NULL DEFAULT 'received',
+    UNIQUE(bot_key, update_id)
+  )`,
+  "CREATE INDEX IF NOT EXISTS telegram_update_receipts_received_at_idx ON telegram_update_receipts(received_at)",
+  `CREATE TABLE IF NOT EXISTS service_registry (
+    id SERIAL PRIMARY KEY,
+    service_key TEXT NOT NULL UNIQUE,
+    display_name TEXT NOT NULL,
+    base_path TEXT NOT NULL,
+    owner_schema TEXT NOT NULL DEFAULT 'public',
+    status TEXT NOT NULL DEFAULT 'modular_monolith',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS service_table_ownership (
+    id SERIAL PRIMARY KEY,
+    service_key TEXT NOT NULL,
+    table_name TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(service_key, table_name)
+  )`,
+  "CREATE INDEX IF NOT EXISTS service_table_ownership_table_name_idx ON service_table_ownership(table_name)",
+  `INSERT INTO telegram_bots (bot_key, display_name, responsibility, token_env_var)
+   VALUES
+     ('ayzenx', 'AYZENX', 'Personal workspace', 'TELEGRAM_BOT_TOKEN'),
+     ('warde', 'WARDE', 'Organization / business workspace', 'TELEGRAM_WARDE_BOT_TOKEN'),
+     ('verve', 'VERVE', 'Communication / productivity', 'TELEGRAM_VERVE_BOT_TOKEN'),
+     ('ryft', 'RYFT', 'Finance', 'TELEGRAM_RYFT_BOT_TOKEN'),
+     ('sylo', 'SYLO', 'Secure storage / vault', 'TELEGRAM_SYLO_BOT_TOKEN'),
+     ('skarn', 'SKARN', 'Automation / workflow', 'TELEGRAM_SKARN_BOT_TOKEN'),
+     ('zynth', 'ZYNTH', 'AI / intelligence / agent', 'TELEGRAM_ZYNTH_BOT_TOKEN'),
+     ('new-bot', 'New Telegram Bot', 'Reserved extensible bot slot', 'TELEGRAM_NEW_BOT_TOKEN')
+   ON CONFLICT (bot_key) DO NOTHING`,
+  `CREATE TABLE IF NOT EXISTS idempotency_keys (
+    id SERIAL PRIMARY KEY,
+    scope TEXT NOT NULL,
+    key TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PROCESSING',
+    response_code INTEGER,
+    response_body JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMP NOT NULL,
+    UNIQUE(scope, key)
+  )`,
+  "CREATE INDEX IF NOT EXISTS idx_idempotency_keys_expiry ON idempotency_keys(expires_at)",
+  `CREATE TABLE IF NOT EXISTS service_request_nonces (
+    id SERIAL PRIMARY KEY,
+    service TEXT NOT NULL,
+    request_id TEXT NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(service, request_id)
+  )`,
+  "CREATE INDEX IF NOT EXISTS idx_service_request_nonces_expiry ON service_request_nonces(expires_at)",
+  `INSERT INTO service_registry (service_key, display_name, base_path, owner_schema, status)
+   VALUES
+     ('api-gateway', 'API Gateway', '/api', 'public', 'extraction_ready'),
+     ('telegram-gateway', 'Telegram Gateway', '/api/telegram', 'public', 'extraction_ready'),
+     ('identity', 'Identity', '/api/auth', 'public', 'extraction_ready'),
+     ('authorization', 'Authorization', '/api', 'public', 'extraction_ready'),
+     ('workspace', 'Workspace', '/api/workspaces', 'public', 'extraction_ready'),
+     ('finance', 'Finance', '/api/finance', 'public', 'modular_monolith'),
+     ('vault', 'Vault', '/api/vault', 'public', 'modular_monolith'),
+     ('workflow', 'Workflow', '/api/workflows', 'public', 'modular_monolith'),
+     ('mail', 'Mail', '/api/mail', 'public', 'modular_monolith'),
+     ('notification', 'Notification', '/api/notifications', 'public', 'modular_monolith'),
+     ('ai-agent', 'AI / Agent', '/api/ai', 'public', 'modular_monolith'),
+     ('event-bus', 'Event Bus', '/api/events', 'public', 'extraction_ready')
+   ON CONFLICT (service_key) DO NOTHING`,
+  `INSERT INTO service_table_ownership (service_key, table_name)
+   VALUES
+     ('workspace', 'workspaces'), ('workspace', 'workspace_members'),
+     ('telegram-gateway', 'telegram_bots'), ('telegram-gateway', 'telegram_update_receipts'),
+     ('event-bus', 'event_outbox'), ('event-bus', 'event_processed'),
+     ('event-bus', 'event_processing'), ('event-bus', 'event_dead_letter'),
+     ('api-gateway', 'service_registry'), ('api-gateway', 'service_table_ownership'),
+     ('event-bus', 'idempotency_keys'), ('api-gateway', 'service_request_nonces')
+   ON CONFLICT (service_key, table_name) DO NOTHING`,
 ];

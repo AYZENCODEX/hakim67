@@ -50,6 +50,7 @@ import { apiKeyScopeGate } from "./middlewares/api-key-scope";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { runWithTraceContext, traceContextFromHeaders } from "./lib/trace-context";
+import { gatewayContextMiddleware } from "./lib/gateway-context";
 import { sioraRequestTelemetry } from "./lib/siora/request-middleware";
 import { SHARED_APP_DEFINITIONS, getSharedAppHosts } from "./lib/shared-apps";
 
@@ -84,6 +85,9 @@ app.use((req, res, next) => {
   if (context.correlationId) res.setHeader("x-correlation-id", context.correlationId);
   runWithTraceContext(context, next);
 });
+// API Gateway context is transport metadata only. Authorization middleware
+// resolves the authenticated user/workspace later and never trusts headers.
+app.use(gatewayContextMiddleware);
 
 app.use((req, res, next) => {
   const start = Date.now();

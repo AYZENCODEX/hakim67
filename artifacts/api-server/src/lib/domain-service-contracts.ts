@@ -1,0 +1,61 @@
+import { DOMAIN_SERVICES, type DomainService } from "./architecture/domains";
+import { getOwnedTables } from "./service-boundaries";
+import { registerAyzenDomainEvents } from "./mega-engine/domain-events";
+
+/**
+ * Phases 10-20 keep the existing modular monolith intact while exposing the
+ * contracts an extracted service would own. These descriptors are metadata,
+ * not process spawns: every domain still runs through the existing API,
+ * transaction, policy, event-bus, and worker implementations.
+ */
+export interface DomainServiceContract {
+  service: DomainService;
+  tables: readonly string[];
+  capabilities: readonly string[];
+  events: readonly string[];
+}
+
+const CAPABILITIES: Readonly<Record<DomainService, readonly string[]>> = {
+  "api-gateway": ["request-context", "rate-limits", "route-dispatch"],
+  "telegram-gateway": ["bot-registry", "webhook-verification", "update-idempotency"],
+  identity: ["session-authentication", "token-verification", "session-revocation"],
+  authorization: ["policy-evaluation", "rbac", "audit"],
+  workspace: ["personal-workspaces", "organization-workspaces", "membership-access"],
+  finance: ["ledger", "invoices", "repayments", "net-worth"],
+  vault: ["encrypted-entries", "sharing", "backup-and-recovery"],
+  workflow: ["definitions", "durable-runs", "retries", "compensation"],
+  mail: ["mailbox", "inbound-webhooks", "durable-send-queue", "delivery-tracking"],
+  notification: ["preferences", "in-app", "telegram", "email", "sse"],
+  "ai-agent": ["chat", "credits", "agent-actions"],
+  marketplace: ["catalog", "orders", "offers"],
+  "search-knowledge": ["search", "indexing"],
+  analytics: ["request-metrics", "activity"],
+  "event-bus": ["transactional-outbox", "dispatch", "retry", "dead-letter", "consumer-idempotency"],
+};
+
+const SERVICE_EVENTS: Readonly<Record<DomainService, readonly string[]>> = {
+  "api-gateway": [],
+  "telegram-gateway": ["telegram.notification.requested"],
+  identity: ["oidc.login", "oidc.session.created", "oidc.session.revoked", "oidc.logout"],
+  authorization: [],
+  workspace: ["organization.member.invited", "organization.member.joined", "organization.member.role_changed", "organization.member.removed"],
+  finance: ["credits.consumed", "credits.consumption_failed"],
+  vault: ["vault.share.created", "vault.share.revoked"],
+  workflow: ["workflow.started", "workflow.completed", "workflow.failed", "workflow.cancelled", "workflow.timed_out"],
+  mail: ["notification.requested", "notification.delivered", "notification.failed"],
+  notification: ["notification.requested", "notification.delivered", "notification.failed"],
+  "ai-agent": ["ai.action.requested", "ai.action.completed", "ai.action.failed"],
+  marketplace: ["project.lifecycle.changed"],
+  "search-knowledge": [],
+  analytics: [],
+  "event-bus": [],
+};
+
+registerAyzenDomainEvents();
+
+export const DOMAIN_SERVICE_CONTRACTS: readonly DomainServiceContract[] = DOMAIN_SERVICES.map((service) => ({
+  service,
+  tables: getOwnedTables(service),
+  capabilities: CAPABILITIES[service],
+  events: SERVICE_EVENTS[service],
+}));

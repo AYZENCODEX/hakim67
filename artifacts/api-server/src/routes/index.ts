@@ -158,6 +158,8 @@ import financeRouter from "./finance";
 import financeInvoicesRouter from "./finance-invoices";
 import projectTemplatesRouter from "./project-templates";
 import sharedRouter from "./shared";
+import workspacesRouter from "./workspaces";
+import platformRouter from "./platform";
 
 const router: IRouter = Router();
 
@@ -209,6 +211,8 @@ router.use(earnLinksRouter);
 router.use(categoriesRouter);
 router.use(teamsRouter);
 router.use(organizationsRouter);
+router.use(workspacesRouter);
+router.use(platformRouter);
 router.use(contentRouter);
 router.use(entitiesRouter);
 router.use(vaultSharesRouter);

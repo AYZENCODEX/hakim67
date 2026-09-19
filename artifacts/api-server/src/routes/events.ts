@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { getUserFromToken } from "../lib/auth-utils";
+import { authenticateAccessToken } from "../lib/identity-service";
 
 const router = Router();
 
@@ -27,7 +27,7 @@ async function getUserIdFromReq(req: Request): Promise<number | null> {
   const token = headerToken || queryToken;
   if (!token) return null;
 
-  const user = await getUserFromToken(token);
+  const user = await authenticateAccessToken(token);
   return user ? user.userId : null;
 }
 

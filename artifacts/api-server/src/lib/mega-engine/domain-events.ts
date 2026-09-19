@@ -32,6 +32,9 @@ export const AYZEN_DOMAIN_EVENT_TYPES = [
   "astra.session.synchronized",
   "project.lifecycle.changed",
   "task.reminder.requested",
+  "ai.action.requested",
+  "ai.action.completed",
+  "ai.action.failed",
 ] as const;
 
 export type AyzenDomainEventType = (typeof AYZEN_DOMAIN_EVENT_TYPES)[number];

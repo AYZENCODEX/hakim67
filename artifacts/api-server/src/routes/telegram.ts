@@ -2,6 +2,8 @@ import { Router } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { broadcastToAll, verifyTelegramCode, getBot, handleWebhookUpdate, getTelegramTransportMode } from "../lib/telegram";
+import { claimTelegramUpdate, normalizeTelegramUpdate } from "../lib/telegram-gateway";
+import { getTelegramBotDescriptor, getTelegramBotStatus } from "../lib/telegram-bot-registry";
 import { requireAuth, requireAdmin, getRequestUser } from "../middlewares/auth";
 
 const router = Router();
@@ -88,6 +90,50 @@ router.get("/telegram/status", async (_req, res): Promise<void> => {
   } catch (err: any) {
     res.json({ online: false, reason: err?.message });
   }
+});
+
+// Shared registry view. It intentionally exposes only configuration status,
+// never tokens, webhook secrets, or provider credentials.
+router.get("/telegram/bots", (_req, res): void => {
+  res.json(
+    getTelegramBotStatus().map(({ tokenEnvVar, webhookSecretEnvVar, ...bot }) => ({
+      ...bot,
+      tokenConfigured: Boolean(process.env[tokenEnvVar]),
+      webhookSecretConfigured: Boolean(process.env[webhookSecretEnvVar]),
+    })),
+  );
+});
+
+// Extensible shared gateway ingress. AYZENX keeps using the existing handler
+// pipeline for backward compatibility; other registered bots are accepted
+// only after their durable idempotency receipt is claimed and remain
+// intentionally unhandled until their domain command adapters are added.
+router.post("/telegram/gateway/:botKey/webhook", async (req, res): Promise<void> => {
+  const envelope = normalizeTelegramUpdate(req.params.botKey, req.body);
+  if (!envelope) {
+    res.status(400).json({ error: "Unknown bot or invalid Telegram update", code: "INVALID_TELEGRAM_UPDATE" });
+    return;
+  }
+
+  const descriptor = getTelegramBotDescriptor(envelope.botKey);
+  const descriptorSecret = descriptor ? process.env[descriptor.webhookSecretEnvVar] : undefined;
+  if (!descriptorSecret || req.header("x-telegram-bot-api-secret-token") !== descriptorSecret) {
+    res.sendStatus(401);
+    return;
+  }
+
+  if (!(await claimTelegramUpdate(envelope))) {
+    res.sendStatus(200);
+    return;
+  }
+
+  if (envelope.botKey === "ayzenx") {
+    handleWebhookUpdate(req.body, req.header("x-telegram-bot-api-secret-token"));
+    res.sendStatus(200);
+    return;
+  }
+
+  res.status(202).json({ accepted: true, status: "awaiting-domain-adapter", botKey: envelope.botKey });
 });
 
 // POST /telegram/webhook — Telegram calls this directly when the bot is

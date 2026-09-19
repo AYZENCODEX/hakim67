@@ -56,7 +56,8 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { getTokenFromReq, getUserFromToken } from "../lib/auth-utils";
+import { getTokenFromReq } from "../lib/auth-utils";
+import { authenticateAccessToken } from "../lib/identity-service";
 import { requireRole as pepRequireRole } from "../lib/policy/pep/middleware";
 import { composeObservers, authorizationObserver } from "../lib/policy/observability";
 import { createAuthorizationAuditObserver } from "../lib/policy/audit";
@@ -118,7 +119,7 @@ export async function requireAuth(
     });
     return;
   }
-  const user = await getUserFromToken(token);
+  const user = await authenticateAccessToken(token);
   if (!user) {
     res.status(401).json({
       error: "Unauthorized",
@@ -147,7 +148,7 @@ export async function requireSessionAuth(
     res.status(401).json({ error: "Unauthorized", code: "NO_TOKEN", solution: "Include a valid Authorization: Bearer <token> header." });
     return;
   }
-  const user = await getUserFromToken(token);
+  const user = await authenticateAccessToken(token);
   if (!user) {
     res.status(401).json({ error: "Unauthorized", code: "INVALID_TOKEN", solution: "Token is invalid or expired. Please log in again." });
     return;
@@ -273,7 +274,7 @@ export async function requireAdmin(
     res.status(401).json({ error: "Unauthorized", code: "NO_TOKEN", solution: "Include a valid Authorization: Bearer <token> header." });
     return;
   }
-  const user = await getUserFromToken(token);
+  const user = await authenticateAccessToken(token);
   if (!user) {
     res.status(401).json({ error: "Unauthorized", code: "INVALID_TOKEN", solution: "Token is invalid or expired. Please log in again." });
     return;
@@ -295,7 +296,7 @@ export async function requireDev(
     res.status(401).json({ error: "Unauthorized", code: "NO_TOKEN", solution: "Include a valid Authorization: Bearer <token> header." });
     return;
   }
-  const user = await getUserFromToken(token);
+  const user = await authenticateAccessToken(token);
   if (!user) {
     res.status(401).json({ error: "Unauthorized", code: "INVALID_TOKEN", solution: "Token is invalid or expired. Please log in again." });
     return;
@@ -324,7 +325,7 @@ export function requireRoles(...roles: string[]) {
       res.status(401).json({ error: "Unauthorized", code: "NO_TOKEN", solution: "Include a valid Authorization: Bearer <token> header." });
       return;
     }
-    const user = await getUserFromToken(token);
+  const user = await authenticateAccessToken(token);
     if (!user) {
       res.status(401).json({ error: "Unauthorized", code: "INVALID_TOKEN", solution: "Token is invalid or expired. Please log in again." });
       return;
