@@ -13,7 +13,30 @@ export interface DomainServiceContract {
   tables: readonly string[];
   capabilities: readonly string[];
   events: readonly string[];
+  qualityGates: readonly [
+    "authentication",
+    "authorization",
+    "rate-limiting",
+    "audit-logging",
+    "structured-logs",
+    "metrics",
+    "tracing",
+    "health-readiness",
+    "contract-tests",
+  ];
 }
+
+const REQUIRED_SERVICE_QUALITY_GATES: DomainServiceContract["qualityGates"] = [
+  "authentication",
+  "authorization",
+  "rate-limiting",
+  "audit-logging",
+  "structured-logs",
+  "metrics",
+  "tracing",
+  "health-readiness",
+  "contract-tests",
+];
 
 const CAPABILITIES: Readonly<Record<DomainService, readonly string[]>> = {
   "api-gateway": ["request-context", "rate-limits", "route-dispatch"],
@@ -58,4 +81,5 @@ export const DOMAIN_SERVICE_CONTRACTS: readonly DomainServiceContract[] = DOMAIN
   tables: getOwnedTables(service),
   capabilities: CAPABILITIES[service],
   events: SERVICE_EVENTS[service],
+  qualityGates: REQUIRED_SERVICE_QUALITY_GATES,
 }));

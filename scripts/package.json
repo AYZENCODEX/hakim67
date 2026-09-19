@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "test:service-contracts": "tsx ./src/test-service-contracts.ts",
     "jwt:keypair": "tsx ./src/generate-jwt-keypair.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check": "tsx ./src/check-all.ts",
