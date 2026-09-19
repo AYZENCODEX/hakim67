@@ -8,7 +8,8 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:mega-engine": "node --test --import tsx src/lib/mega-engine/*.test.ts"
+    "test:mega-engine": "node --test --import tsx src/lib/mega-engine/*.test.ts",
+    "test:new-engines": "node --test --import tsx src/lib/new-engines/*.test.ts"
   },
   "dependencies": {
     "@polymarket/clob-client": "^4.16.0",

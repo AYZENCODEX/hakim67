@@ -1,1 +1,2 @@
 - [Imported pnpm toolchain](pnpm-toolchain.md) — this repository pins pnpm in packageManager, but the available wrapper may try an offline self-bootstrap before scripts can run.
+- [Workspace typecheck baseline](workspace-typecheck-baseline.md) — the imported API package currently has a pre-existing syntax error in scheduler/index.ts, so focused checks are needed until it is repaired.

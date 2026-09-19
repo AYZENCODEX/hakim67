@@ -33,6 +33,7 @@ import adminWalletRouter from "./admin-wallet";
 import configRouter from "./config";
 import subEnginesRouter from "./sub-engines";
 import advancedSubEnginesRouter from "./sub-engines-advanced";
+import newEnginesRouter from "./new-engines";
 import sioraRouter from "./siora";
 import adminOidcRolloutRouter from "./admin-oidc-rollout";
 // OIDC Roadmap — Season 3, Phase 6e-d: Monitoring — admin GET for the
@@ -253,6 +254,7 @@ router.use(adminWalletRouter);
 router.use(configRouter);
 router.use(subEnginesRouter);
 router.use(advancedSubEnginesRouter);
+router.use(newEnginesRouter);
 router.use(sioraRouter);
 // Season 3, Phase 5c-c/5c-d/5c-e/5d-b/5e-c/5e-d — admin GET/PATCH for the
 // OIDC rollout flag + comparison stats + health. Same `requireDev`-gated
