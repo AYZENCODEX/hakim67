@@ -139,6 +139,22 @@ const DEFAULT_EVENT_TYPES: Array<{ type: string; owner: string }> = [
 
   { type: "telegram.delivery.requested", owner: "telegram" },
   { type: "telegram.delivery.completed", owner: "telegram" },
+
+  // Roadmap phases 10, 12, 13, 14, 15, 16, 18, 19 and 20. These entries
+  // make the cross-domain vocabulary explicit before each producer adopts a
+  // stricter domain-owned Zod schema.
+  { type: "finance.transaction.created", owner: "finance" },
+  { type: "finance.transaction.updated", owner: "finance" },
+  { type: "vault.secret.accessed", owner: "vault" },
+  { type: "wisp.message.received", owner: "mail" },
+  { type: "wisp.message.sent", owner: "mail" },
+  { type: "mail.delivery.requested", owner: "mail" },
+  { type: "mail.delivery.updated", owner: "mail" },
+  { type: "notification.sent", owner: "notifications" },
+  { type: "ai.task.completed", owner: "ai-agent" },
+  { type: "verve.activity.created", owner: "workspace" },
+  { type: "search.document.indexed", owner: "search-knowledge" },
+  { type: "analytics.event.recorded", owner: "analytics" },
 ];
 
 for (const { type, owner } of DEFAULT_EVENT_TYPES) {

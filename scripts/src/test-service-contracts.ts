@@ -1,14 +1,23 @@
 import assert from "node:assert/strict";
 import {
   DOMAIN_SERVICE_CONTRACTS,
-  getServiceDescriptor,
 } from "../../artifacts/api-server/src/lib/domain-service-contracts";
+import { getServiceDescriptor } from "../../artifacts/api-server/src/lib/architecture/domains";
 import {
   signServiceRequest,
   verifyServiceSignature,
   hashRequestBody,
 } from "../../artifacts/api-server/src/lib/service-to-service-security";
 import { assertTableOwnedBy, getTableOwner } from "../../artifacts/api-server/src/lib/service-boundaries";
+import {
+  ROADMAP_PHASES_10_25,
+  getRoadmapReadiness,
+  getRegisteredEventTypes,
+} from "../../artifacts/api-server/src/lib/roadmap-contracts";
+import {
+  MIGRATION_ROUTES,
+  canAdvanceMigration,
+} from "../../artifacts/api-server/src/lib/migration-registry";
 
 const secret = "contract-test-secret";
 const signatureInput = {
@@ -96,6 +105,27 @@ async function main(): Promise<void> {
       hashRequestBody({ amount: 10, currency: "USD" }),
       hashRequestBody({ currency: "USD", amount: 10 }),
     );
+  });
+
+  await test("roadmap phases 10-25 have explicit acceptance contracts", () => {
+    assert.deepEqual(
+      ROADMAP_PHASES_10_25.map((phase) => phase.phase),
+      Array.from({ length: 16 }, (_, index) => index + 10),
+    );
+    const readiness = getRoadmapReadiness();
+    assert.equal(readiness.ready, true);
+    assert.ok(getRegisteredEventTypes().includes("finance.transaction.created"));
+    assert.ok(getRegisteredEventTypes().includes("wisp.message.received"));
+  });
+
+  await test("strangler migration requires every safety gate before cutover", () => {
+    assert.equal(MIGRATION_ROUTES.length >= 8, true);
+    assert.equal(canAdvanceMigration("monolith", "dual_read", []), false);
+    assert.equal(
+      canAdvanceMigration("monolith", "dual_read", ["backup", "characterization", "backfill", "validation", "rollback"]),
+      true,
+    );
+    assert.equal(canAdvanceMigration("monolith", "write_switched", ["backup", "characterization", "backfill", "validation", "rollback"]), false);
   });
 }
 

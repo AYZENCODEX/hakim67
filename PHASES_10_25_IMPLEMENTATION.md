@@ -1,32 +1,31 @@
 # AYZEN roadmap phases 10–25
 
-This repository keeps these phases in the modular-monolith migration path. The
-roadmap requires meaningful business boundaries, not one process per route.
-The implementation below makes each boundary reviewable and extraction-ready
-without duplicating the existing Finance, Vault, Workflow, Mail, Notification,
-AI, Event Bus, and Idempotency code.
+This repository implements phases 10–25 as an extraction-ready modular
+monolith. The attached V2 roadmap is the source of truth for phase numbering.
+Runtime readiness is represented by
+`artifacts/api-server/src/lib/roadmap-contracts.ts`; the Phase 25 route
+matrix is represented by `migration-registry.ts`.
 
 ## Implemented boundary map
 
 | Phase | Boundary or control | Current implementation |
 | --- | --- | --- |
-| 10 | Database boundaries | `architecture/domains.ts`, `lib/service-boundaries.ts`, and the `service_registry` / `service_table_ownership` tables. Ownership checks fail closed when a module attempts to use another domain's table. |
-| 11 | Finance / RYFT | Existing Finance ledger, books, journal, invoice, repayment, reporting, and wallet bridge routes and schemas are registered as the Finance contract. |
-| 12 | Vault / SYLO | Existing encrypted Vault, step-up/reveal controls, sharing, backup, snapshot, activity, and attachment modules are registered as the Vault contract. |
-| 13 | Workflow / SKARN | Existing durable definitions/runs, retries, compensation, scheduling, replay, and workflow metrics are registered as the Workflow contract. |
-| 14 | AI / Agent / ZYNTH | Existing AI action, credit-meter, agent, and policy-controlled routes are registered as the AI contract. |
-| 15 | WISP Mailbox | Existing AYZEN mailbox tables/routes, threading, spam/reputation, folders, drafts, and mailbox delivery state are registered as the Mail contract. |
-| 16 | Mail delivery | Existing durable send queue, provider delivery tracking, inbound webhook verification, attachments, retry, and delivery health remain owned by Mail. |
-| 17 | Notification | Existing notification records, preferences, in-app delivery, Telegram/email adapters, and SSE delivery remain owned by Notification. |
-| 17 (event bus) | Event Bus | Registered event vocabulary plus durable outbox, dispatcher, retry, processed-event, and dead-letter tables are reused. |
-| 18 | Outbox | Domain events are inserted into `event_outbox` before dispatch; event IDs and trace/correlation/causation IDs are retained for recovery and diagnosis. |
-| 19 | Idempotency | API writes use `idempotency_keys`; event consumers use processed-event/processing claims; Telegram and scheduled jobs retain their own dedupe keys. |
-| 20 | Service-to-service security | Signed HMAC requests use `X-Ayzen-Service`, `X-Ayzen-Request-Id`, `X-Ayzen-Timestamp`, and `X-Ayzen-Signature`. Timestamp validation, constant-time signature comparison, allowed-service checks, and durable nonce replay protection are mandatory. |
-| 21 | Observability | Structured Pino logs, request/engine metrics, AsyncLocalStorage trace context, and propagated trace/correlation/causation IDs are shared across domain, event, workflow, and scheduler paths. |
-| 22 | Rate limiting | API-wide and sensitive/auth/OTP limiters are centralized in `middlewares/security.ts`; limits are configurable by environment and emit standard headers. |
-| 23 | Security hardening | Helmet, locked-down CORS, body limits, query de-duplication, prototype-key sanitization, auth/policy gates, encrypted Vault fields, and fail-closed service authentication are retained. |
-| 24 | Testing strategy | `scripts/src/test-service-contracts.ts` checks the service inventory, ownership failure path, signed-request tamper detection, and nonce replay behavior. Existing domain-specific tests remain alongside it. |
-| 25 | Contract testing | `DomainServiceContract` is the shared contract inventory: owned tables, capabilities, events, and required quality gates are checked for every declared domain. |
+| 10 | Event Bus | Registered event vocabulary plus durable envelopes, schema validation, dispatcher, consumer idempotency, retry, and dead-letter tables are reused. |
+| 11 | Outbox & reliability | Domain events are inserted into `event_outbox` in the caller's transaction; leases, backoff, jitter, stale-lock recovery, and graceful shutdown are implemented. |
+| 12 | Finance / RYFT | Finance ledger, books, journal, invoice, repayment, reporting, and wallet bridge routes and schemas are registered as the Finance contract. |
+| 13 | Vault / SYLO | Encrypted Vault, step-up/reveal controls, sharing, backup, snapshot, activity, and attachment modules are registered as the Vault contract. |
+| 14 | WISP mailbox | AYZEN mailbox tables/routes, threading, spam/reputation, folders, drafts, attachments, and mailbox delivery state are registered as the Mail contract. |
+| 15 | Mail delivery | Durable send queue, provider delivery tracking, inbound webhook verification, attachments, retry, and delivery health remain separate from mailbox behavior. |
+| 16 | Notifications | Notification records, preferences, in-app delivery, Telegram/email adapters, and SSE delivery remain owned by Notification. |
+| 17 | Workflow / SKARN | Durable definitions/runs, retries, compensation, scheduling, replay, and workflow metrics are registered as the Workflow contract. |
+| 18 | AI / Agent / ZYNTH | AI action, credit-meter, agent, tool, and policy-controlled routes are registered as the AI contract. |
+| 19 | VERVE | Existing communication/productivity capabilities remain workspace-scoped and are listed as an extraction-ready boundary without inventing unsupported tables. |
+| 20 | Marketplace / Search / Knowledge / Analytics | Existing marketplace, search, and telemetry boundaries are registered independently and are event-consumer-ready. |
+| 21 | Observability | Structured Pino logs, AsyncLocalStorage trace context, request/engine metrics, and propagated trace/correlation/causation IDs are shared across domains. |
+| 22 | Testing & contracts | Service contract tests cover inventory, ownership failure, signatures, tamper detection, roadmap readiness, and strangler safety gates. |
+| 23 | Frontend & clients | Public clients use gateway-owned paths and shared contract packages; internal service addresses are not exposed as a client dependency. |
+| 24 | Database ownership | `service_registry` / `service_table_ownership` and `assertTableOwnedBy()` make ownership explicit and fail closed. |
+| 25 | Data migration | `migration-registry.ts` provides an explicit route matrix and requires backup, characterization, backfill, validation, and rollback gates for each cutover. |
 
 ## Service-to-service request contract
 

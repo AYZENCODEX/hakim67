@@ -5,6 +5,8 @@ import { getOwnedTables } from "../lib/service-boundaries";
 import { getTelegramBotStatus } from "../lib/telegram-bot-registry";
 import { DOMAIN_SERVICE_CONTRACTS } from "../lib/domain-service-contracts";
 import { requireServiceRequest } from "../lib/service-to-service-security";
+import { getMigrationReadiness } from "../lib/migration-registry";
+import { getRoadmapReadiness, ROADMAP_PHASES_10_25, getRegisteredEventTypes } from "../lib/roadmap-contracts";
 
 const router = Router();
 
@@ -22,6 +24,21 @@ router.get("/platform/architecture", requireDev, (_req, res): void => {
       webhookSecretConfigured: Boolean(process.env[webhookSecretEnvVar]),
     })),
     contracts: DOMAIN_SERVICE_CONTRACTS,
+  });
+});
+
+/**
+ * Internal roadmap visibility for operators and CI smoke checks. This endpoint
+ * reports metadata and readiness only; it never exposes credentials, payloads,
+ * mailbox contents, or Vault values.
+ */
+router.get("/platform/roadmap", requireDev, (_req, res): void => {
+  res.json({
+    roadmap: "AYZEN Implementation Roadmap V2",
+    phases: ROADMAP_PHASES_10_25,
+    readiness: getRoadmapReadiness(),
+    migration: getMigrationReadiness(),
+    registeredEventTypes: getRegisteredEventTypes(),
   });
 });
 
