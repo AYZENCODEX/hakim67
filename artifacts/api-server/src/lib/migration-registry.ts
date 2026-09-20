@@ -10,6 +10,8 @@ export type MigrationCutoverState =
 export interface MigrationRoute {
   routePrefix: string;
   service: DomainService;
+  serviceUrlEnv: string;
+  servicePackage: string;
   fallback: "monolith";
   state: MigrationCutoverState;
   requiredGates: readonly ["backup", "characterization", "backfill", "validation", "rollback"];
@@ -29,14 +31,14 @@ const REQUIRED_GATES: MigrationRoute["requiredGates"] = [
  * traffic switch hidden in route registration.
  */
 export const MIGRATION_ROUTES: readonly MigrationRoute[] = [
-  { routePrefix: "/api/finance", service: "finance", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
-  { routePrefix: "/api/vault", service: "vault", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
-  { routePrefix: "/api/mail", service: "mail", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
-  { routePrefix: "/api/notifications", service: "notification", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
-  { routePrefix: "/api/workflows", service: "workflow", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
-  { routePrefix: "/api/ai", service: "ai-agent", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
-  { routePrefix: "/api/marketplace", service: "marketplace", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
-  { routePrefix: "/api/search", service: "search-knowledge", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
+  { routePrefix: "/api/finance", service: "finance", serviceUrlEnv: "FINANCE_SERVICE_URL", servicePackage: "@ayzen/finance-service", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
+  { routePrefix: "/api/vault", service: "vault", serviceUrlEnv: "VAULT_SERVICE_URL", servicePackage: "@ayzen/vault-service", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
+  { routePrefix: "/api/mail", service: "mail", serviceUrlEnv: "WISP_SERVICE_URL", servicePackage: "@ayzen/mail-service", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
+  { routePrefix: "/api/notifications", service: "notification", serviceUrlEnv: "NOTIFICATION_SERVICE_URL", servicePackage: "@ayzen/notification-service", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
+  { routePrefix: "/api/workflows", service: "workflow", serviceUrlEnv: "WORKFLOW_SERVICE_URL", servicePackage: "@ayzen/workflow-service", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
+  { routePrefix: "/api/ai", service: "ai-agent", serviceUrlEnv: "AI_SERVICE_URL", servicePackage: "@ayzen/ai-service", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
+  { routePrefix: "/api/marketplace", service: "marketplace", serviceUrlEnv: "MARKETPLACE_SERVICE_URL", servicePackage: "@ayzen/marketplace-service", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
+  { routePrefix: "/api/search", service: "search-knowledge", serviceUrlEnv: "SEARCH_SERVICE_URL", servicePackage: "@ayzen/search-service", fallback: "monolith", state: "monolith", requiredGates: REQUIRED_GATES },
 ];
 
 const STATE_ORDER: readonly MigrationCutoverState[] = [

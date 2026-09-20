@@ -1,16 +1,17 @@
 # AYZEN roadmap phases 10–25
 
-This repository implements phases 10–25 as an extraction-ready modular
-monolith. The attached V2 roadmap is the source of truth for phase numbering.
-Runtime readiness is represented by
-`artifacts/api-server/src/lib/roadmap-contracts.ts`; the Phase 25 route
-matrix is represented by `migration-registry.ts`.
+This repository implements phases 10–25 as a gateway-fronted service
+architecture with a compatibility monolith. The attached V2 roadmap is the
+source of truth for phase numbering. Runtime readiness is represented by
+`artifacts/api-server/src/lib/roadmap-contracts.ts`; the Phase 25 route matrix
+is represented by `migration-registry.ts`, and the public process boundary is
+`apps/api-gateway`.
 
 ## Implemented boundary map
 
 | Phase | Boundary or control | Current implementation |
 | --- | --- | --- |
-| 10 | Event Bus | Registered event vocabulary plus durable envelopes, schema validation, dispatcher, consumer idempotency, retry, and dead-letter tables are reused. |
+| 10 | Event Bus | Registered event vocabulary plus durable envelopes, schema validation, dispatcher, consumer idempotency, retry, and dead-letter tables are reused by the split processes. |
 | 11 | Outbox & reliability | Domain events are inserted into `event_outbox` in the caller's transaction; leases, backoff, jitter, stale-lock recovery, and graceful shutdown are implemented. |
 | 12 | Finance / RYFT | Finance ledger, books, journal, invoice, repayment, reporting, and wallet bridge routes and schemas are registered as the Finance contract. |
 | 13 | Vault / SYLO | Encrypted Vault, step-up/reveal controls, sharing, backup, snapshot, activity, and attachment modules are registered as the Vault contract. |
@@ -23,9 +24,9 @@ matrix is represented by `migration-registry.ts`.
 | 20 | Marketplace / Search / Knowledge / Analytics | Existing marketplace, search, and telemetry boundaries are registered independently and are event-consumer-ready. |
 | 21 | Observability | Structured Pino logs, AsyncLocalStorage trace context, request/engine metrics, and propagated trace/correlation/causation IDs are shared across domains. |
 | 22 | Testing & contracts | Service contract tests cover inventory, ownership failure, signatures, tamper detection, roadmap readiness, and strangler safety gates. |
-| 23 | Frontend & clients | Public clients use gateway-owned paths and shared contract packages; internal service addresses are not exposed as a client dependency. |
+| 23 | Frontend & clients | Public clients use gateway-owned paths and shared contract packages; internal service addresses are not exposed as a client dependency. `apps/api-gateway` is the only public server boundary. |
 | 24 | Database ownership | `service_registry` / `service_table_ownership` and `assertTableOwnedBy()` make ownership explicit and fail closed. |
-| 25 | Data migration | `migration-registry.ts` provides an explicit route matrix and requires backup, characterization, backfill, validation, and rollback gates for each cutover. |
+| 25 | Data migration | `migration-registry.ts` and the gateway provide an explicit route matrix. Each route falls back to the monolith unless its service URL is configured, and cutover still requires backup, characterization, backfill, validation, and rollback gates. |
 
 ## Service-to-service request contract
 
@@ -47,8 +48,21 @@ must mount it before their domain handler.
 
 ## Remaining extraction work
 
-These phases establish boundaries inside the modular monolith. They do not
-claim that Finance, Vault, or another domain has already been split into a
-separate deployable process. Actual extraction remains a later migration step:
-introduce a network adapter, move the owned schema, keep the contract tests,
-and switch traffic only after rollback and data-migration checks pass.
+The compatibility monolith remains the source of domain behavior until each
+route family passes its migration gates. The new service packages are
+independently deployable transport boundaries with health/readiness/manifest
+endpoints and no shared imports from the API server. They intentionally do not
+claim domain extraction is complete: each service must receive its owned
+handlers and schema adapter before its gateway URL is enabled.
+
+## Running the split server
+
+```text
+monolith:        PORT=8080 pnpm --filter @workspace/api-server dev
+gateway:         PORT=5000 MONOLITH_URL=http://127.0.0.1:8080 pnpm --filter @ayzen/api-gateway start
+finance service: PORT=8101 pnpm --filter @ayzen/finance-service start
+```
+
+The gateway is safe to start before any extracted service. Configure one of
+the route environment variables documented in `apps/api-gateway/README.md`
+only after its service has passed its migration gates.

@@ -1,0 +1,13 @@
+{
+  "name": "@ayzen/api-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/index.mjs",
+    "start": "node src/index.mjs"
+  },
+  "dependencies": {
+    "@ayzen/service-runtime": "workspace:*"
+  }
+}

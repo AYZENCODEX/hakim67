@@ -1,15 +1,17 @@
-import { DOMAIN_SERVICES, type DomainService } from "./architecture/domains";
+import { DOMAIN_SERVICES, SERVICE_DESCRIPTORS, type DomainService } from "./architecture/domains";
 import { getOwnedTables } from "./service-boundaries";
 import { registerAyzenDomainEvents } from "./mega-engine/domain-events";
 
 /**
- * Phases 10-20 keep the existing modular monolith intact while exposing the
- * contracts an extracted service would own. These descriptors are metadata,
- * not process spawns: every domain still runs through the existing API,
- * transaction, policy, event-bus, and worker implementations.
+ * These descriptors are the contract between the gateway and independently
+ * runnable service packages. A service process owns transport and future
+ * domain handlers; the migration registry controls when public traffic leaves
+ * the monolith.
  */
 export interface DomainServiceContract {
   service: DomainService;
+  processPackage: string;
+  routeEnv?: string;
   tables: readonly string[];
   capabilities: readonly string[];
   events: readonly string[];
@@ -78,6 +80,8 @@ registerAyzenDomainEvents();
 
 export const DOMAIN_SERVICE_CONTRACTS: readonly DomainServiceContract[] = DOMAIN_SERVICES.map((service) => ({
   service,
+  processPackage: SERVICE_DESCRIPTORS.find((descriptor) => descriptor.key === service)?.processPackage ?? "@workspace/api-server",
+  routeEnv: SERVICE_DESCRIPTORS.find((descriptor) => descriptor.key === service)?.routeEnv,
   tables: getOwnedTables(service),
   capabilities: CAPABILITIES[service],
   events: SERVICE_EVENTS[service],
