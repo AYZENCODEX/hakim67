@@ -895,4 +895,130 @@ ayzen/
 │   └── analytics/
 ├── packages/
 │   ├── auth/
-│   ├── con
+│   ├── contracts/
+│   ├── api-client/
+│   ├── api-spec/
+│   ├── events/
+│   ├── telegram/
+│   ├── policy/
+│   ├── logger/
+│   ├── telemetry/
+│   ├── tracing/
+│   ├── errors/
+│   ├── config/
+│   └── types/
+├── infrastructure/
+│   ├── docker/
+│   ├── kubernetes/
+│   ├── terraform/
+│   ├── monitoring/
+│   └── secrets/
+├── tests/
+├── docs/
+└── scripts/
+```
+
+---
+
+# PHASE 34 — CLAUDE CODE EXECUTION RULES
+Claude must:
+
+1. Inspect before changing.
+2. Preserve working functionality.
+3. Avoid unnecessary rewrites.
+4. Maintain backward compatibility.
+5. Add characterization tests before risky extraction.
+6. Never create fake microservices.
+7. Never share service databases.
+8. Never hardcode secrets.
+9. Never bypass authorization.
+10. Never give AI unrestricted access.
+11. Never put domain logic in Telegram handlers.
+12. Never expose internal errors in production.
+13. Never perform irreversible migrations without rollback.
+14. Never declare completion without verification.
+
+For every phase report:
+```text
+Completed
+Files changed
+Services created/changed
+API changes
+DB changes
+Events
+Security changes
+Tests
+Verification
+Known risks
+Rollback
+Next phase
+```
+
+If a migration risks data loss, downtime or security/authorization regression, STOP before proceeding.
+
+---
+
+# PHASE 35 — DEFINITION OF DONE
+A phase/service is complete only when:
+```text
+Architecture
++ Implementation
++ Tests
++ Security
++ Observability
++ Documentation
++ Migration
++ Rollback
+```
+are addressed.
+
+---
+
+# FINAL TARGET
+
+```text
+                 AYZEN ECOSYSTEM
+
+      PERSONAL                    BUSINESS
+         │                           │
+      AYZENX                       WARDE
+         │                           │
+         └─────────────┬─────────────┘
+                       │
+                  API GATEWAY
+                       │
+       ┌───────────────┼────────────────┐
+       │               │                │
+    Identity       Workspace       Authorization
+       │               │                │
+       ├───────────────┼────────────────┤
+       │               │                │
+    Finance          Vault             WISP
+     RYFT            SYLO              WISP
+       │               │                │
+       ├───────────────┼────────────────┤
+       │               │                │
+    Workflow           AI          Communication
+     SKARN            ZYNTH             VERVE
+       │               │
+       └───────────────┼────────────────┘
+                       │
+                   EVENT BUS
+                       │
+             ┌─────────┼─────────┐
+             │         │         │
+        Notification  Mail    Analytics
+                    Delivery
+                       │
+                Search/Knowledge
+```
+
+## Core principle
+
+The goal is NOT:
+**8 bots = 8 servers.**
+
+The goal is:
+**8 Telegram products/interfaces + well-bounded domain services + one coherent identity, workspace, authorization, security and observability model.**
+
+A practical target is roughly **10–15 meaningful backend services**, not dozens of tiny services.
